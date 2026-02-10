@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import PrimeReact theme */
+@import 'primereact/resources/themes/lara-light-green/theme.css';
+@import 'primereact/resources/primereact.min.css';
+@import 'primeicons/primeicons.css';
+
+/* Custom styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Garden widget animations */
+.plant-icon {
+  font-size: 4rem;
+  transition: transform 0.3s ease;
+}
+
+.plant-icon:hover {
+  transform: scale(1.1);
+}
+
+.level-up-animation {
+  animation: levelUp 0.6s ease-out;
+}
+
+@keyframes levelUp {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Progress bar custom styles */
+.garden-progress {
+  background: linear-gradient(90deg, #22c55e 0%, #86efac 100%);
+  transition: width 0.5s ease;
+}
+
+/* Fix for transparent modals */
+.p-dialog {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.p-dialog .p-dialog-header {
+  background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+}
+
+.p-dialog .p-dialog-content {
+  background-color: white !important;
+  color: #4b5563 !important;
+  padding: 1.5rem !important;
+}
+
+.p-dialog .p-dialog-footer {
+  background-color: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+  padding: 1rem 1.5rem !important;
+}
+
+/* Backdrop más oscuro */
+.p-dialog-mask {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Fix for dropdown overflow in dialogs */
+.p-dropdown-panel {
+  z-index: 9999 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.p-dialog .p-dialog-content {
+  overflow: visible !important;
+  min-height: 300px !important;
+}
+
+/* Fix for button icons not showing */
+.p-button-icon {
+  font-size: 1rem !important;
+  display: inline-block !important;
+}
+
+.p-button-icon-only {
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+}
+
+.p-button-icon-only .p-button-icon {
+  margin: 0 !important;
+}
+
+/* Toast styling - better visibility */
+.p-toast {
+  z-index: 10000 !important;
+}
+
+.p-toast .p-toast-message {
+  background-color: white !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
+  padding: 1rem !important;
+  min-width: 300px !important;
+}
+
+.p-toast .p-toast-message-info {
+  border-left: 6px solid #3b82f6 !important;
+}
+
+.p-toast .p-toast-message-success {
+  border-left: 6px solid #10b981 !important;
+}
+
+.p-toast .p-toast-message-error {
+  border-left: 6px solid #ef4444 !important;
+}
+
+.p-toast .p-toast-message-warn {
+  border-left: 6px solid #f59e0b !important;
+}
+
+.p-toast .p-toast-message .p-toast-message-content {
+  padding: 0 !important;
+  color: #1f2937 !important;
+}
+
+.p-toast .p-toast-message .p-toast-summary {
+  font-weight: 600 !important;
+  color: #111827 !important;
+  font-size: 1rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.p-toast .p-toast-message .p-toast-detail {
+  color: #4b5563 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+}
