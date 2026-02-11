@@ -108,24 +108,26 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('🌱 RehabCompanion API Server - LOCAL DEVELOPMENT');
-  console.log('═══════════════════════════════════════════════════════');
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 API Base: http://localhost:${PORT}/api`);
-  console.log(`🗄️  Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ Not configured'}`);
-  console.log('═══════════════════════════════════════════════════════\n');
-  console.log('Available endpoints:');
-  console.log('  POST /api/auth/login');
-  console.log('  GET  /api/auth/profile');
-  console.log('  GET  /api/tasks/list');
-  console.log('  POST /api/tasks/complete');
-  console.log('  GET  /api/garden/state');
-  console.log('═══════════════════════════════════════════════════════\n');
-});
+// Start server only if not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('🌱 RehabCompanion API Server - LOCAL DEVELOPMENT');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`📚 API Base: http://localhost:${PORT}/api`);
+    console.log(`🗄️  Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ Not configured'}`);
+    console.log('═══════════════════════════════════════════════════════\n');
+    console.log('Available endpoints:');
+    console.log('  POST /api/auth/login');
+    console.log('  GET  /api/auth/profile');
+    console.log('  GET  /api/tasks/list');
+    console.log('  POST /api/tasks/complete');
+    console.log('  GET  /api/garden/state');
+    console.log('═══════════════════════════════════════════════════════\n');
+  });
+}
 
 export default app;
