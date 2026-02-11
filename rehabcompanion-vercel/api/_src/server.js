@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Cargar variables de entorno (primero .env.local si existe)
-dotenv.config({ path: join(__dirname, '.env.local') });
-dotenv.config({ path: join(__dirname, '.env') });
+dotenv.config({ path: join(__dirname, '..', '.env.local') });
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

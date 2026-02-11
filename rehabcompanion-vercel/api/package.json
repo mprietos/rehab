@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
-    "dev:watch": "nodemon server.js"
+    "dev": "node _src/server.js",
+    "start": "node _src/server.js",
+    "dev:watch": "nodemon _src/server.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
