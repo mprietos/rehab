@@ -1,14 +1,5 @@
-node_modules
-.env
-.env.local
-.env.*.local
 .DS_Store
 *.log
 .git
-.gitignore
 *.md
-api/node_modules
-client/node_modules
-# Ignorar todos los archivos JS de la API excepto server.js
-api/**/*.js
-!api/server.js
+# No ignorar archivos necesarios para el deploy

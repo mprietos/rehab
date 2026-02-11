@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install --include=dev && npm run build && cd ../api && npm install",
+  "buildCommand": "cd client && npm install --include=dev && npm run build && cd ../api && npm install && npx prisma generate",
   "outputDirectory": "client/dist",
   "builds": [
     {
-      "src": "api/server.js",
+      "src": "api/index.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": ["api/**"]
@@ -14,11 +14,11 @@
   "routes": [
     {
       "src": "/health",
-      "dest": "/api/server.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/api/(.*)",
-      "dest": "/api/server.js"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
