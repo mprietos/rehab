@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install && npm run build",
-  "outputDirectory": "client/dist",
-  "framework": "vite",
   "builds": [
     {
       "src": "client/package.json",
@@ -18,12 +15,24 @@
   ],
   "routes": [
     {
+      "src": "/health",
+      "dest": "/api/server.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/server.js"
     },
     {
-      "src": "/(.*)",
+      "src": "/login",
+      "dest": "/client/dist/index.html"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico))",
       "dest": "/client/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/index.html"
     }
   ],
   "headers": [
