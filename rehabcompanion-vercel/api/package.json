@@ -2,7 +2,7 @@
   "name": "rehabcompanion-api",
   "version": "1.0.0",
   "description": "Backend API for RehabCompanion - Vercel Serverless",
-  "main": "index.js",
+  "main": "index.mjs",
   "type": "module",
   "scripts": {
     "dev": "node _src/server.js",

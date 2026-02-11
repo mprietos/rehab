@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "SaaS platform for rehabilitation clinics - Vercel deployment & Local development",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
     "dev:api": "cd api && npm run dev:watch",
