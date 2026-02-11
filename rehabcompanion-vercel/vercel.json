@@ -1,20 +1,29 @@
 {
+  "version": 2,
   "buildCommand": "cd client && npm install --include=dev && npm run build && cd ../api && npm install",
   "outputDirectory": "client/dist",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/health",
-      "destination": "/api/server"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/server"
+      "src": "api/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["api/**"]
+      }
     }
   ],
-  "functions": {
-    "api/server.js": {
-      "memory": 1024,
-      "maxDuration": 10
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "/api/server.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/$1",
+      "status": 200
     }
-  }
+  ]
 }
