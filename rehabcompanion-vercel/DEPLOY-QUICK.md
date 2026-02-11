@@ -10,6 +10,7 @@
 4. Region: EU (más cercano)
 5. Copiar Connection String (Transaction mode)
 ```
+xXcX7b8i088g
 
 ### 2. Aplicar Schema (3 min)
 ```bash
@@ -96,6 +97,113 @@ vercel --prod
 ### ❌ Login falla
 - Regenera JWT_SECRET
 - Verifica que sea el mismo en Vercel y en seed local
+
+---
+
+## 📝 Configuración de Variables de Entorno
+
+### Diferencias entre .env y .env.local
+
+El proyecto usa dos archivos de configuración:
+
+#### `.env` - Producción (Supabase con Connection Pooling)
+```env
+# Connection Pooling para producción usando Supabase Pooler
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-1-REGION.pooler.supabase.com:5432/postgres
+NODE_ENV=production
+```
+
+**Características:**
+- ✅ Usa **Supabase Pooler** (Session Mode)
+- ✅ Puerto **5432** con pooling automático
+- ✅ Optimizado para producción y serverless (Vercel)
+- ✅ Mejor rendimiento con múltiples conexiones
+- ✅ Soporta IPv4 (sin problemas de conectividad)
+
+**Cuándo usar:**
+- Al hacer deploy a Vercel
+- Para ejecutar `npx prisma db push` en producción
+- Para seed de datos en producción
+
+#### `.env.local` - Desarrollo Local
+```env
+# Conexión directa para desarrollo - Puerto 5432
+DATABASE_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres?sslmode=require
+NODE_ENV=development
+```
+
+**Características:**
+- ✅ Usa puerto **5432** (Conexión directa)
+- ✅ Parámetro `sslmode=require` para seguridad
+- ✅ Soporta migraciones y operaciones de Prisma
+- ✅ Ideal para desarrollo y debugging
+
+**Cuándo usar:**
+- Al desarrollar localmente (`npm run dev`)
+- Para ejecutar migraciones con Prisma
+- Para testing local
+
+### Cómo cambiar entre entornos
+
+**Opción 1: Renombrar archivos (Manual)**
+```bash
+# Para usar producción
+mv .env .env.backup
+mv .env.production .env
+
+# Para usar local
+mv .env .env.production
+mv .env.local .env
+```
+
+**Opción 2: Variables de entorno en el comando**
+```bash
+# Desarrollo local
+NODE_ENV=development npm run dev
+
+# Producción
+NODE_ENV=production npm start
+```
+
+**Opción 3: Usar dotenv-cli (Recomendado)**
+```bash
+# Instalar
+npm install -g dotenv-cli
+
+# Usar con .env.local
+dotenv -e .env.local -- npm run dev
+
+# Usar con .env (producción)
+dotenv -e .env -- npx prisma db push
+```
+
+### Configuración de Supabase
+
+**Para obtener la URL de conexión:**
+
+1. Ve a tu proyecto en Supabase
+2. Settings → Database
+3. Copia las URLs según tu necesidad:
+
+   **Connection Pooling (Producción) - Session Mode:**
+   - Ve a: **Settings → Database → Connection Pooling**
+   - Selecciona: **Session Mode**
+   - URI: `postgresql://postgres.PROJECT_REF:[PASSWORD]@aws-1-REGION.pooler.supabase.com:5432/postgres`
+   - **Importante:** Usa el pooler (`aws-X-region.pooler.supabase.com`), no la conexión directa
+
+   **Direct Connection (Local/Migraciones):**
+   - Ve a: **Settings → Database → Connection String**
+   - Selecciona: **URI**
+   - URI: `postgresql://postgres:[PASSWORD]@db.PROJECT_REF.supabase.co:5432/postgres`
+   - Añade: `?sslmode=require`
+   - **Nota:** Puede tener problemas con IPv6 en algunos entornos locales
+
+### ⚠️ Importante
+
+- **NUNCA** commitees archivos `.env` con credenciales reales
+- Añade `.env*` a tu `.gitignore`
+- Usa `.env.example` para documentar variables requeridas
+- Regenera `JWT_SECRET` y `ENCRYPTION_MASTER_KEY` en producción
 
 ---
 
