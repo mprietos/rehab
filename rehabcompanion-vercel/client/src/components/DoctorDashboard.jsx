@@ -11,6 +11,7 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { doctorAPI } from '../services/api';
+import MoodChart from './MoodChart';
 
 const DoctorDashboard = () => {
     const navigate = useNavigate();
@@ -258,282 +259,308 @@ const DoctorDashboard = () => {
             {/* Main content */}
             <div className="container mx-auto px-4 py-6">
 
-            <Card className="shadow-md">
-                <DataTable value={patients} loading={loading} paginator rows={10} emptyMessage="No hay pacientes asignados">
-                    <Column field="firstName" header="Nombre" sortable></Column>
-                    <Column field="lastName" header="Apellido" sortable></Column>
-                    <Column field="email" header="Email" sortable></Column>
-                    <Column header="Estado Planta" body={stageBodyTemplate}></Column>
-                    <Column header="Acciones" body={actionBodyTemplate}></Column>
-                </DataTable>
-            </Card>
+                <Card className="shadow-md">
+                    <DataTable value={patients} loading={loading} paginator rows={10} emptyMessage="No hay pacientes asignados">
+                        <Column field="firstName" header="Nombre" sortable></Column>
+                        <Column field="lastName" header="Apellido" sortable></Column>
+                        <Column field="email" header="Email" sortable></Column>
+                        <Column header="Estado Planta" body={stageBodyTemplate}></Column>
+                        <Column header="Acciones" body={actionBodyTemplate}></Column>
+                    </DataTable>
+                </Card>
 
-            <Dialog visible={showDetailDialog} onHide={() => setShowDetailDialog(false)} header="Detalle de Paciente" style={{ width: '70vw' }} modal>
-                {selectedPatient && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Información Personal</h3>
-                            <p><strong>Nombre:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                            <p><strong>Email:</strong> {selectedPatient.email}</p>
-                            <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
-                                <h4 className="font-bold text-red-700">Contacto de Emergencia</h4>
-                                <p>{selectedPatient.emergencyContactName}</p>
-                                <p>{selectedPatient.emergencyContactPhone}</p>
+                <Dialog visible={showDetailDialog} onHide={() => setShowDetailDialog(false)} header="Detalle de Paciente" style={{ width: '70vw' }} modal>
+                    {selectedPatient && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Información Personal</h3>
+                                <p><strong>Nombre:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                                <p><strong>Email:</strong> {selectedPatient.email}</p>
+                                <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
+                                    <h4 className="font-bold text-red-700">Contacto de Emergencia</h4>
+                                    <p>{selectedPatient.emergencyContactName}</p>
+                                    <p>{selectedPatient.emergencyContactPhone}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold mb-2">Progreso</h3>
-                            <div className="p-4 bg-green-50 rounded border border-green-200">
-                                <p><strong>Etapa:</strong> {selectedPatient.gardenState?.plantStage}</p>
-                                <p><strong>XP Actual:</strong> {selectedPatient.gardenState?.currentXp}</p>
-                                <p><strong>Racha:</strong> {selectedPatient.gardenState?.streakDays} días</p>
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Progreso</h3>
+                                <div className="p-4 bg-green-50 rounded border border-green-200">
+                                    <p><strong>Etapa:</strong> {selectedPatient.gardenState?.plantStage}</p>
+                                    <p><strong>XP Actual:</strong> {selectedPatient.gardenState?.currentXp}</p>
+                                    <p><strong>Racha:</strong> {selectedPatient.gardenState?.streakDays} días</p>
+                                </div>
+                                <div className="mt-4 flex gap-2">
+                                    <Button label="Asignar Tarea" icon="pi pi-check-square" onClick={() => setTaskDialog(true)} />
+                                    <Button label="Enviar Ánimo" icon="pi pi-heart" severity="help" onClick={() => setMessageDialog(true)} />
+                                </div>
                             </div>
-                            <div className="mt-4 flex gap-2">
-                                <Button label="Asignar Tarea" icon="pi pi-check-square" onClick={() => setTaskDialog(true)} />
-                                <Button label="Enviar Ánimo" icon="pi pi-heart" severity="help" onClick={() => setMessageDialog(true)} />
-                            </div>
-                        </div>
 
-                        <div className="col-span-1 md:col-span-2 mt-4">
-                            <h3 className="text-lg font-semibold mb-2">Historial Reciente</h3>
-                            <DataTable value={selectedPatient.dailyTasks} paginator rows={5} size="small">
-                                <Column field="date" header="Fecha" body={(rowData) => new Date(rowData.date).toLocaleDateString()}></Column>
-                                <Column field="type" header="Tipo"></Column>
-                                <Column field="description" header="Descripción"></Column>
-                                <Column field="isCompleted" header="Completado" body={(rowData) => rowData.isCompleted ? <i className="pi pi-check text-green-500"></i> : <i className="pi pi-times text-red-500"></i>}></Column>
-                                <Column field="mood" header="Estado de Ánimo"></Column>
-                            </DataTable>
-                        </div>
+                            <div className="col-span-1 md:col-span-2 mt-4">
+                                <h3 className="text-lg font-semibold mb-2">Historial Reciente</h3>
+                                <DataTable value={selectedPatient.dailyTasks} paginator rows={5} size="small">
+                                    <Column field="date" header="Fecha" body={(rowData) => new Date(rowData.date).toLocaleDateString()}></Column>
+                                    <Column field="type" header="Tipo"></Column>
+                                    <Column field="description" header="Descripción"></Column>
+                                    <Column field="isCompleted" header="Completado" body={(rowData) => rowData.isCompleted ? <i className="pi pi-check text-green-500"></i> : <i className="pi pi-times text-red-500"></i>}></Column>
+                                    <Column field="mood" header="Estado de Ánimo"></Column>
+                                </DataTable>
+                            </div>
 
-                        <div className="col-span-1 md:col-span-2 mt-4">
-                            <h3 className="text-lg font-semibold mb-2">Historial de Estados de Ánimo</h3>
-                            <div className="bg-gray-50 p-4 rounded-lg">
-                                {selectedPatient.dailyTasks
-                                    ?.filter(task => task.mood && task.isCompleted)
-                                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                    .slice(0, 10)
-                                    .map((task, index) => (
-                                        <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                                            <span className="text-sm text-gray-600">
-                                                {new Date(task.date).toLocaleDateString('es-ES', {
-                                                    weekday: 'short',
-                                                    day: 'numeric',
-                                                    month: 'short'
-                                                })}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                                    task.mood === 'Bien' ? 'bg-green-100 text-green-700' :
-                                                    task.mood === 'Regular' ? 'bg-yellow-100 text-yellow-700' :
-                                                    task.mood === 'Mal' ? 'bg-red-100 text-red-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
-                                                    {task.mood || 'No registrado'}
+                            <div className="col-span-1 md:col-span-2 mt-4">
+                                <h3 className="text-lg font-semibold mb-2">Historial de Estados de Ánimo</h3>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    {selectedPatient.dailyTasks
+                                        ?.filter(task => task.mood && task.isCompleted)
+                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                        .slice(0, 10)
+                                        .map((task, index) => (
+                                            <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(task.date).toLocaleDateString('es-ES', {
+                                                        weekday: 'short',
+                                                        day: 'numeric',
+                                                        month: 'short'
+                                                    })}
                                                 </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${task.mood === 'Bien' ? 'bg-green-100 text-green-700' :
+                                                        task.mood === 'Regular' ? 'bg-yellow-100 text-yellow-700' :
+                                                            task.mood === 'Mal' ? 'bg-red-100 text-red-700' :
+                                                                'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                        {task.mood || 'No registrado'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    {!selectedPatient.dailyTasks?.some(task => task.mood) && (
+                                        <p className="text-center text-gray-500 py-4">
+                                            No hay registros de estado de ánimo
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2 mt-4">
+                                <h3 className="text-lg font-semibold mb-2">Gráfico de Estado de Ánimo (15 días)</h3>
+                                <MoodChart moodChecks={selectedPatient.moodChecks || []} />
+                            </div>
+
+                            {/* Emergency Call Alert */}
+                            {selectedPatient.moodChecks?.some(check => check.requestedEmergencyCall) && (
+                                <div className="col-span-1 md:col-span-2 mt-4">
+                                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-3xl">🚨</span>
+                                            <div>
+                                                <h4 className="font-bold text-red-700 text-lg">Alerta de Emergencia</h4>
+                                                <p className="text-red-600">
+                                                    El paciente ha solicitado contacto de emergencia debido a estado de ánimo bajo prolongado.
+                                                </p>
+                                                {selectedPatient.emergencyContactName && (
+                                                    <p className="text-sm text-gray-700 mt-2">
+                                                        <strong>Contacto de emergencia:</strong> {selectedPatient.emergencyContactName} - {selectedPatient.emergencyContactPhone}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
-                                {!selectedPatient.dailyTasks?.some(task => task.mood) && (
-                                    <p className="text-center text-gray-500 py-4">
-                                        No hay registros de estado de ánimo
-                                    </p>
-                                )}
-                            </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )}
-            </Dialog>
+                    )}
+                </Dialog>
 
-            <Dialog
-                visible={taskDialog}
-                onHide={() => setTaskDialog(false)}
-                header="Asignar Nueva Tarea"
-                style={{ width: '550px' }}
-                modal
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1rem 0' }}>
-                    <div>
-                        <label className="block mb-2 font-semibold text-gray-700">
-                            Tipo de Tarea
-                        </label>
-                        <select
-                            value={newTask.type}
-                            onChange={(e) => setNewTask({ ...newTask, type: e.target.value, description: '' })}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            {taskTypes.map(type => (
-                                <option key={type.value} value={type.value}>{type.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block mb-2 font-semibold text-gray-700">
-                            Tarea Predefinida
-                        </label>
-                        <select
-                            value={newTask.description}
-                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Selecciona una tarea...</option>
-                            {predefinedTasks[newTask.type].map(task => (
-                                <option key={task.value} value={task.value}>{task.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block mb-2 font-semibold text-gray-700">
-                            O escribe una tarea personalizada
-                        </label>
-                        <InputText
-                            value={newTask.description}
-                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                            className="w-full"
-                            placeholder="Escribe una tarea personalizada..."
-                        />
-                    </div>
-
-                    <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
-                        <Button
-                            label="Asignar Tarea"
-                            icon="pi pi-check"
-                            loading={submitting}
-                            onClick={handleAssignTask}
-                            disabled={!newTask.description}
-                            className="w-full"
-                            style={{ padding: '0.75rem' }}
-                        />
-                    </div>
-                </div>
-            </Dialog>
-
-            <Dialog visible={messageDialog} onHide={() => setMessageDialog(false)} header="Enviar Mensaje de Ánimo" style={{ width: '500px' }} modal>
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <label className="block mb-2 font-semibold">Mensaje</label>
-                        <InputTextarea
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            rows={6}
-                            className="w-full"
-                            placeholder="Escribe un mensaje de ánimo para tu paciente..."
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            label="Generar con IA"
-                            icon="pi pi-sparkles"
-                            outlined
-                            severity="secondary"
-                            loading={submitting}
-                            onClick={handleGenerateAIMessage}
-                            className="flex-1"
-                        />
-                        <Button
-                            label="Enviar"
-                            icon="pi pi-send"
-                            severity="help"
-                            loading={submitting}
-                            onClick={handleSendMessage}
-                            disabled={!newMessage}
-                            className="flex-1"
-                        />
-                    </div>
-                </div>
-            </Dialog>
-
-            <Dialog visible={createPatientDialog} onHide={() => setCreatePatientDialog(false)} header="Crear Nuevo Paciente" style={{ width: '600px' }} modal>
-                <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Dialog
+                    visible={taskDialog}
+                    onHide={() => setTaskDialog(false)}
+                    header="Asignar Nueva Tarea"
+                    style={{ width: '550px' }}
+                    modal
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1rem 0' }}>
                         <div>
-                            <label className="block mb-2 font-semibold">Nombre *</label>
+                            <label className="block mb-2 font-semibold text-gray-700">
+                                Tipo de Tarea
+                            </label>
+                            <select
+                                value={newTask.type}
+                                onChange={(e) => setNewTask({ ...newTask, type: e.target.value, description: '' })}
+                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                {taskTypes.map(type => (
+                                    <option key={type.value} value={type.value}>{type.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block mb-2 font-semibold text-gray-700">
+                                Tarea Predefinida
+                            </label>
+                            <select
+                                value={newTask.description}
+                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">Selecciona una tarea...</option>
+                                {predefinedTasks[newTask.type].map(task => (
+                                    <option key={task.value} value={task.value}>{task.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block mb-2 font-semibold text-gray-700">
+                                O escribe una tarea personalizada
+                            </label>
                             <InputText
-                                value={newPatient.firstName}
-                                onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
+                                value={newTask.description}
+                                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                                 className="w-full"
-                                placeholder="Nombre del paciente"
+                                placeholder="Escribe una tarea personalizada..."
                             />
                         </div>
-                        <div>
-                            <label className="block mb-2 font-semibold">Apellido *</label>
-                            <InputText
-                                value={newPatient.lastName}
-                                onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
+
+                        <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb' }}>
+                            <Button
+                                label="Asignar Tarea"
+                                icon="pi pi-check"
+                                loading={submitting}
+                                onClick={handleAssignTask}
+                                disabled={!newTask.description}
                                 className="w-full"
-                                placeholder="Apellido del paciente"
+                                style={{ padding: '0.75rem' }}
                             />
                         </div>
                     </div>
+                </Dialog>
 
-                    <div>
-                        <label className="block mb-2 font-semibold">Email *</label>
-                        <InputText
-                            value={newPatient.email}
-                            onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
-                            className="w-full"
-                            placeholder="email@ejemplo.com"
-                            type="email"
-                        />
+                <Dialog visible={messageDialog} onHide={() => setMessageDialog(false)} header="Enviar Mensaje de Ánimo" style={{ width: '500px' }} modal>
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <label className="block mb-2 font-semibold">Mensaje</label>
+                            <InputTextarea
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                rows={6}
+                                className="w-full"
+                                placeholder="Escribe un mensaje de ánimo para tu paciente..."
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                label="Generar con IA"
+                                icon="pi pi-sparkles"
+                                outlined
+                                severity="secondary"
+                                loading={submitting}
+                                onClick={handleGenerateAIMessage}
+                                className="flex-1"
+                            />
+                            <Button
+                                label="Enviar"
+                                icon="pi pi-send"
+                                severity="help"
+                                loading={submitting}
+                                onClick={handleSendMessage}
+                                disabled={!newMessage}
+                                className="flex-1"
+                            />
+                        </div>
                     </div>
+                </Dialog>
 
-                    <div>
-                        <label className="block mb-2 font-semibold">Contraseña *</label>
-                        <InputText
-                            value={newPatient.password}
-                            onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
-                            className="w-full"
-                            placeholder="Contraseña inicial"
-                            type="password"
-                        />
-                    </div>
-
-                    <div className="border-t pt-4">
-                        <h4 className="font-bold mb-3 text-red-700">Contacto de Emergencia</h4>
+                <Dialog visible={createPatientDialog} onHide={() => setCreatePatientDialog(false)} header="Crear Nuevo Paciente" style={{ width: '600px' }} modal>
+                    <div className="flex flex-col gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block mb-2">Nombre</label>
+                                <label className="block mb-2 font-semibold">Nombre *</label>
                                 <InputText
-                                    value={newPatient.emergencyContactName}
-                                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })}
+                                    value={newPatient.firstName}
+                                    onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
                                     className="w-full"
-                                    placeholder="Nombre del contacto"
+                                    placeholder="Nombre del paciente"
                                 />
                             </div>
                             <div>
-                                <label className="block mb-2">Teléfono</label>
+                                <label className="block mb-2 font-semibold">Apellido *</label>
                                 <InputText
-                                    value={newPatient.emergencyContactPhone}
-                                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })}
+                                    value={newPatient.lastName}
+                                    onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
                                     className="w-full"
-                                    placeholder="+34 600 000 000"
+                                    placeholder="Apellido del paciente"
                                 />
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex gap-2 pt-4">
-                        <Button
-                            label="Cancelar"
-                            icon="pi pi-times"
-                            outlined
-                            onClick={() => setCreatePatientDialog(false)}
-                            className="flex-1"
-                        />
-                        <Button
-                            label="Crear Paciente"
-                            icon="pi pi-check"
-                            loading={submitting}
-                            onClick={handleCreatePatient}
-                            severity="success"
-                            className="flex-1"
-                        />
+                        <div>
+                            <label className="block mb-2 font-semibold">Email *</label>
+                            <InputText
+                                value={newPatient.email}
+                                onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                                className="w-full"
+                                placeholder="email@ejemplo.com"
+                                type="email"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block mb-2 font-semibold">Contraseña *</label>
+                            <InputText
+                                value={newPatient.password}
+                                onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
+                                className="w-full"
+                                placeholder="Contraseña inicial"
+                                type="password"
+                            />
+                        </div>
+
+                        <div className="border-t pt-4">
+                            <h4 className="font-bold mb-3 text-red-700">Contacto de Emergencia</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block mb-2">Nombre</label>
+                                    <InputText
+                                        value={newPatient.emergencyContactName}
+                                        onChange={(e) => setNewPatient({ ...newPatient, emergencyContactName: e.target.value })}
+                                        className="w-full"
+                                        placeholder="Nombre del contacto"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block mb-2">Teléfono</label>
+                                    <InputText
+                                        value={newPatient.emergencyContactPhone}
+                                        onChange={(e) => setNewPatient({ ...newPatient, emergencyContactPhone: e.target.value })}
+                                        className="w-full"
+                                        placeholder="+34 600 000 000"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-4">
+                            <Button
+                                label="Cancelar"
+                                icon="pi pi-times"
+                                outlined
+                                onClick={() => setCreatePatientDialog(false)}
+                                className="flex-1"
+                            />
+                            <Button
+                                label="Crear Paciente"
+                                icon="pi pi-check"
+                                loading={submitting}
+                                onClick={handleCreatePatient}
+                                severity="success"
+                                className="flex-1"
+                            />
+                        </div>
                     </div>
-                </div>
-            </Dialog>
-            </div>
-        </div>
+                </Dialog>
+            </div >
+        </div >
     );
 };
 

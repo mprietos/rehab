@@ -20,14 +20,36 @@ export default async function handler(req, res) {
     }
     const userId = decoded.id;
 
-    // Get unread messages sent to this user
-    const messages = await prisma.message.findMany({
-      where: {
-        toId: userId,
+    const otherUserId = req.query.userId;
+
+    let whereClause = {
+      toId: userId,
+      isActive: true
+    };
+
+    if (otherUserId) {
+      whereClause = {
+        OR: [
+          { fromId: userId, toId: otherUserId },
+          { fromId: otherUserId, toId: userId }
+        ],
         isActive: true
-      },
+      };
+    }
+
+    // Get messages
+    const messages = await prisma.message.findMany({
+      where: whereClause,
       include: {
         sender: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true
+          }
+        },
+        receiver: {
           select: {
             id: true,
             firstName: true,
@@ -37,14 +59,14 @@ export default async function handler(req, res) {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc' // Use asc for chronological history
       }
     });
 
     return res.status(200).json({
       success: true,
       messages,
-      unreadCount: messages.filter(m => !m.isRead).length
+      unreadCount: messages.filter(m => m.toId === userId && !m.isRead).length
     });
 
   } catch (error) {

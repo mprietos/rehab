@@ -57,6 +57,8 @@ export const doctorAPI = {
 // Messages API
 export const messageAPI = {
   getMessages: () => api.get('/messages/list'),
+  getConversation: (userId) => api.get('/messages/list', { params: { userId } }),
+  sendMessage: (toId, content) => api.post('/messages/send', { toId, content }),
   markAsRead: (messageId) => api.post('/messages/mark-read', { messageId })
 };
 

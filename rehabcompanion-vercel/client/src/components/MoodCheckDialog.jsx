@@ -93,11 +93,10 @@ const MoodCheckDialog = ({ visible, onHide, onSubmit, consecutiveBadDays = 0, us
                   <button
                     key={mood.value}
                     onClick={() => handleMoodSelect(mood.value)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                      selectedMood === mood.value
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${selectedMood === mood.value
                         ? 'border-current scale-105 shadow-lg'
                         : 'border-gray-300 hover:border-gray-400 hover:scale-102'
-                    }`}
+                      }`}
                     style={{
                       borderColor: selectedMood === mood.value ? mood.color : undefined,
                       backgroundColor: selectedMood === mood.value ? `${mood.color}15` : 'white'
@@ -188,7 +187,13 @@ const MoodCheckDialog = ({ visible, onHide, onSubmit, consecutiveBadDays = 0, us
                     }}
                   >
                     <p className="font-semibold text-gray-800">{user.emergencyContactName}</p>
-                    <p className="text-gray-600">{user.emergencyContactPhone}</p>
+                    <a
+                      href={`tel:${user.emergencyContactPhone}`}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      style={{ textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      📞 {user.emergencyContactPhone}
+                    </a>
                   </div>
                   <p className="text-sm text-gray-600">
                     También notificaremos a tu doctor para que esté al tanto.

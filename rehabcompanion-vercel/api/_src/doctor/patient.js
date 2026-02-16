@@ -66,11 +66,18 @@ export default async function handler(req, res) {
                 dailyTasks: {
                     where: {
                         date: {
-                            gte: new Date(new Date().setDate(new Date().getDate() - 7)) // Last 7 days
+                            gte: new Date(new Date().setDate(new Date().getDate() - 15)) // Last 15 days
                         }
                     },
-                    orderBy: { date: 'desc' },
-                    take: 20
+                    orderBy: { date: 'desc' }
+                },
+                moodChecks: {
+                    where: {
+                        date: {
+                            gte: new Date(new Date().setDate(new Date().getDate() - 15)) // Last 15 days
+                        }
+                    },
+                    orderBy: { date: 'desc' }
                 }
             }
         });

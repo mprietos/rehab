@@ -21,6 +21,9 @@ const DashboardPage = () => {
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [showMoodDialog, setShowMoodDialog] = useState(false);
   const [moodHistory, setMoodHistory] = useState(null);
+  const [newMessageText, setNewMessageText] = useState('');
+  const [doctorId, setDoctorId] = useState(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -44,8 +47,22 @@ const DashboardPage = () => {
   const fetchMessages = async (silent = false) => {
     try {
       const response = await messageAPI.getMessages();
-      setMessages(response.data.messages);
-      setUnreadCount(response.data.unreadCount);
+      const allMessages = response.data.messages;
+
+      // Find the doctor from messages
+      const doctorMessage = allMessages.find(msg => msg.sender?.role === 'DOCTOR' || msg.receiver?.role === 'DOCTOR');
+      if (doctorMessage) {
+        const doctor = doctorMessage.sender?.role === 'DOCTOR' ? doctorMessage.sender : doctorMessage.receiver;
+        setDoctorId(doctor.id);
+
+        // Fetch full conversation with doctor
+        const conversationResponse = await messageAPI.getConversation(doctor.id);
+        setMessages(conversationResponse.data.messages);
+        setUnreadCount(conversationResponse.data.unreadCount);
+      } else {
+        setMessages(allMessages);
+        setUnreadCount(response.data.unreadCount);
+      }
 
       // Show unread messages toast only on initial load
       if (!silent && response.data.unreadCount > 0) {
@@ -79,6 +96,36 @@ const DashboardPage = () => {
         detail: 'No se pudo marcar el mensaje como leído',
         life: 3000
       });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessageText.trim() || !doctorId) return;
+
+    try {
+      setSendingMessage(true);
+      await messageAPI.sendMessage(doctorId, newMessageText);
+      setNewMessageText('');
+
+      // Refresh messages
+      await fetchMessages(true);
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Mensaje enviado',
+        detail: 'Tu mensaje ha sido enviado al doctor',
+        life: 3000
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo enviar el mensaje',
+        life: 3000
+      });
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -303,55 +350,96 @@ const DashboardPage = () => {
       <Dialog
         visible={showMessagesDialog}
         onHide={() => setShowMessagesDialog(false)}
-        header="Mensajes de tu Doctor"
-        style={{ width: '600px' }}
+        header="Conversación con tu Doctor"
+        style={{ width: '600px', maxHeight: '80vh' }}
         modal
       >
-        <div className="flex flex-col gap-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <i className="pi pi-inbox text-4xl mb-3"></i>
-              <p>No tienes mensajes</p>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`p-4 rounded-lg border ${message.isRead ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-300'
-                  }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <strong className="text-lg">
-                      Dr. {message.sender.firstName} {message.sender.lastName}
-                    </strong>
-                    {!message.isRead && (
-                      <Badge value="Nuevo" severity="info" className="ml-2" />
-                    )}
-                  </div>
-                  <small className="text-gray-500">
-                    {new Date(message.createdAt).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </small>
-                </div>
-                <p className="text-gray-700 whitespace-pre-wrap">{message.content}</p>
-                {!message.isRead && (
-                  <Button
-                    label="Marcar como leído"
-                    icon="pi pi-check"
-                    size="small"
-                    text
-                    onClick={() => handleMarkAsRead(message.id)}
-                    className="mt-2"
-                  />
-                )}
+        <div className="flex flex-col" style={{ height: '500px' }}>
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto mb-4 p-2" style={{ maxHeight: '400px' }}>
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <i className="pi pi-inbox text-4xl mb-3"></i>
+                <p>No tienes mensajes</p>
               </div>
-            ))
-          )}
+            ) : (
+              messages.map((message) => {
+                const isFromMe = message.fromId === user?.id;
+                const sender = isFromMe ? message.sender : message.sender;
+                const isUnread = !isFromMe && !message.isRead;
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`mb-3 flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] p-3 rounded-lg ${isFromMe
+                          ? 'bg-blue-500 text-white'
+                          : isUnread
+                            ? 'bg-green-50 border-2 border-green-300'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <strong className="text-sm">
+                          {isFromMe ? 'Tú' : `Dr. ${sender?.firstName} ${sender?.lastName}`}
+                        </strong>
+                        <small className={`text-xs ml-2 ${isFromMe ? 'text-blue-100' : 'text-gray-500'}`}>
+                          {new Date(message.createdAt).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </small>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      {isUnread && (
+                        <Button
+                          label="Marcar como leído"
+                          icon="pi pi-check"
+                          size="small"
+                          text
+                          onClick={() => handleMarkAsRead(message.id)}
+                          className="mt-2 p-0"
+                          style={{ color: 'inherit' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t pt-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newMessageText}
+                onChange={(e) => setNewMessageText(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Escribe un mensaje a tu doctor..."
+                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!doctorId || sendingMessage}
+              />
+              <Button
+                icon="pi pi-send"
+                onClick={handleSendMessage}
+                disabled={!newMessageText.trim() || !doctorId || sendingMessage}
+                loading={sendingMessage}
+                severity="info"
+                style={{ padding: '0.5rem 1rem' }}
+              />
+            </div>
+          </div>
         </div>
       </Dialog>
 
