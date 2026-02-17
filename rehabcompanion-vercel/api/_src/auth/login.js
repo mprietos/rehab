@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import prisma from '../utils/db.js';
-import { generateToken } from '../utils/auth.js';
+import { generateToken, generateRefreshToken } from '../utils/auth.js';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -46,8 +46,9 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate token
+    // Generate tokens
     const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // Return user without sensitive data
     const { password: _, encryptionKey: __, ...userPublic } = user;
@@ -55,6 +56,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       message: 'Login successful',
       token,
+      refreshToken,
       user: userPublic
     });
   } catch (error) {

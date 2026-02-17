@@ -27,6 +27,7 @@ app.use((req, res, next) => {
 
 // Import handlers (serverless functions)
 import loginHandler from './auth/login.js';
+import refreshHandler from './auth/refresh.js';
 import profileHandler from './auth/profile.js';
 import updateProfileHandler from './auth/update-profile.js';
 import tasksListHandler from './tasks/list.js';
@@ -47,6 +48,7 @@ const wrapHandler = (handler) => async (req, res) => {
 
 // Routes - mapping serverless functions to Express routes
 app.post('/api/auth/login', wrapHandler(loginHandler));
+app.post('/api/auth/refresh', wrapHandler(refreshHandler));
 app.get('/api/auth/profile', wrapHandler(profileHandler));
 app.post('/api/auth/update-profile', wrapHandler(updateProfileHandler));
 app.get('/api/tasks/list', wrapHandler(tasksListHandler));

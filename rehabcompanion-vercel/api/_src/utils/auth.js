@@ -2,22 +2,35 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || (JWT_SECRET + '_refresh');
 
 export const generateToken = (user) => {
   return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role
-    },
+    { id: user.id, email: user.email, role: user.role },
     JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '2h' }
+  );
+};
+
+export const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { id: user.id },
+    JWT_REFRESH_SECRET,
+    { expiresIn: '1d' }
   );
 };
 
 export const verifyToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+};
+
+export const verifyRefreshToken = (token) => {
+  try {
+    return jwt.verify(token, JWT_REFRESH_SECRET);
   } catch (error) {
     return null;
   }

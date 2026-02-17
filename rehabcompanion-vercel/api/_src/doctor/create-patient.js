@@ -90,6 +90,15 @@ export default async function handler(req, res) {
       }
     });
 
+    // Send welcome message from doctor to patient
+    await prisma.message.create({
+      data: {
+        fromId: doctorId,
+        toId: patient.id,
+        content: `¡Bienvenido/a a adiccare, ${firstName}! Soy tu doctor/a y estaré aquí para acompañarte en tu proceso. No dudes en escribirme si tienes alguna pregunta o necesitas apoyo. ¡Juntos lo conseguiremos! 💪`
+      }
+    });
+
     return res.status(201).json({
       success: true,
       patient: {

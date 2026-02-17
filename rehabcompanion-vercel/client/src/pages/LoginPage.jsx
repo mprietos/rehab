@@ -32,8 +32,9 @@ const LoginPage = () => {
       setLoading(true);
       const response = await authAPI.login(email, password);
 
-      // Store token
+      // Store tokens
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
       toast.current?.show({
