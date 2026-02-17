@@ -387,10 +387,10 @@ const DashboardPage = () => {
                   >
                     <div
                       className={`max-w-[70%] p-3 rounded-lg ${isFromMe
-                          ? 'bg-blue-500 text-white'
-                          : isUnread
-                            ? 'bg-green-50 border-2 border-green-300'
-                            : 'bg-gray-100 text-gray-800'
+                        ? 'bg-blue-500 text-white'
+                        : isUnread
+                          ? 'bg-green-50 border-2 border-green-300'
+                          : 'bg-gray-100 text-gray-800'
                         }`}
                     >
                       <div className="flex justify-between items-start mb-1">
@@ -442,17 +442,13 @@ const DashboardPage = () => {
                 className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!doctorId || sendingMessage}
               />
-              <button
+              <Button
                 onClick={handleSendMessage}
                 disabled={!newMessageText.trim() || !doctorId || sendingMessage}
-                className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                style={{ minWidth: '2.5rem' }}
-              >
-                {sendingMessage
-                  ? <i className="pi pi-spin pi-spinner" />
-                  : <i className="pi pi-send" />
-                }
-              </button>
+                icon={sendingMessage ? "pi pi-spin pi-spinner" : "pi pi-send"}
+                className="w-10 h-10 p-0 rounded-lg flex items-center justify-center shrink-0"
+                style={{ minWidth: '2.5rem', width: '2.5rem', height: '2.5rem' }}
+              />
             </div>
           </div>
         </div>
