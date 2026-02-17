@@ -442,14 +442,17 @@ const DashboardPage = () => {
                 className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!doctorId || sendingMessage}
               />
-              <Button
-                icon="pi pi-send"
+              <button
                 onClick={handleSendMessage}
                 disabled={!newMessageText.trim() || !doctorId || sendingMessage}
-                loading={sendingMessage}
-                severity="info"
-                style={{ padding: '0.5rem 1rem' }}
-              />
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={{ minWidth: '2.5rem' }}
+              >
+                {sendingMessage
+                  ? <i className="pi pi-spin pi-spinner" />
+                  : <i className="pi pi-send" />
+                }
+              </button>
             </div>
           </div>
         </div>
