@@ -71,9 +71,11 @@ app.post('/api/doctor/generate-message', wrapHandler(doctorGenerateMessageHandle
 // Messages routes
 import messagesListHandler from './messages/list.js';
 import messagesMarkReadHandler from './messages/mark-read.js';
+import messagesSendHandler from './messages/send.js';
 
 app.get('/api/messages', wrapHandler(messagesListHandler));
 app.get('/api/messages/list', wrapHandler(messagesListHandler));
+app.post('/api/messages/send', wrapHandler(messagesSendHandler));
 app.post('/api/messages/:messageId/read', wrapHandler(messagesMarkReadHandler));
 app.post('/api/messages/mark-read', wrapHandler(messagesMarkReadHandler));
 
