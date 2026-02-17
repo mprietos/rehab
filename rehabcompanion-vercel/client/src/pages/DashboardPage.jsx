@@ -8,7 +8,7 @@ import GardenWidget from '../components/GardenWidget';
 import TaskList from '../components/TaskList';
 import MoodCheckDialog from '../components/MoodCheckDialog';
 import MoodChart from '../components/MoodChart';
-import { messageAPI, moodAPI } from '../services/api';
+import { authAPI, messageAPI, moodAPI } from '../services/api';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -39,10 +39,22 @@ const DashboardPage = () => {
     // Only fetch messages and mood once on initial mount
     if (!hasLoadedRef.current) {
       hasLoadedRef.current = true;
+      fetchDoctorId();
       fetchMessages();
       checkMoodStatus();
     }
   }, [navigate]);
+
+  const fetchDoctorId = async () => {
+    try {
+      const response = await authAPI.getProfile();
+      if (response.data.doctor?.id) {
+        setDoctorId(response.data.doctor.id);
+      }
+    } catch (error) {
+      console.error('Error fetching doctor id:', error);
+    }
+  };
 
   const fetchMessages = async (silent = false) => {
     try {

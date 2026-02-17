@@ -102,6 +102,19 @@ const DoctorDashboard = () => {
         }
     };
 
+    const refreshPatientData = async (patientId) => {
+        try {
+            const [patientResponse, messagesResponse] = await Promise.all([
+                doctorAPI.getPatientDetail(patientId),
+                messageAPI.getConversation(patientId)
+            ]);
+            setSelectedPatient(patientResponse.data.patient);
+            setConversationMessages(messagesResponse.data.messages || []);
+        } catch (error) {
+            console.error('Error refreshing patient data:', error);
+        }
+    };
+
     const handleAssignTask = async () => {
         if (!newTask.description) return;
         try {
@@ -110,6 +123,8 @@ const DoctorDashboard = () => {
             toast.current?.show({ severity: 'success', summary: 'Éxito', detail: 'Tarea asignada correctamente' });
             setTaskDialog(false);
             setNewTask({ description: '', type: 'ACTIVITY' });
+            // Refrescar datos del paciente en el modal
+            await refreshPatientData(selectedPatient.id);
         } catch (error) {
             console.error('Error assigning task:', error);
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo asignar la tarea' });
@@ -126,42 +141,34 @@ const DoctorDashboard = () => {
             toast.current?.show({ severity: 'success', summary: 'Éxito', detail: 'Mensaje enviado correctamente' });
             setMessageDialog(false);
             setNewMessage('');
-            // Refresh conversation messages
-            const messagesResponse = await messageAPI.getConversation(selectedPatient.id);
-
-
-            const handleDismissAlert = async () => {
-                if (!selectedPatient?.activeAlertId) return;
-
-                try {
-                    setSubmitting(true);
-                    await doctorAPI.dismissAlert(selectedPatient.activeAlertId);
-
-                    // Refresh patient list to update UI
-                    fetchPatients();
-
-                    // Update local state to hide alert immediately
-                    setSelectedPatient(prev => ({
-                        ...prev,
-                        hasActiveAlert: false,
-                        activeAlertId: null,
-                        moodChecks: prev.moodChecks.map(check =>
-                            check.id === prev.activeAlertId ? { ...check, isDismissed: true } : check
-                        )
-                    }));
-
-                    toast.current?.show({ severity: 'success', summary: 'Alerta Atendida', detail: 'La alerta ha sido desactivada correctamente' });
-                } catch (error) {
-                    console.error('Error dismissing alert:', error);
-                    toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo desactivar la alerta' });
-                } finally {
-                    setSubmitting(false);
-                }
-            };
-            setConversationMessages(messagesResponse.data || []);
+            // Refrescar mensajes en el modal
+            await refreshPatientData(selectedPatient.id);
         } catch (error) {
             console.error('Error sending message:', error);
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar el mensaje' });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDismissAlert = async () => {
+        if (!selectedPatient?.activeAlertId) return;
+        try {
+            setSubmitting(true);
+            await doctorAPI.dismissAlert(selectedPatient.activeAlertId);
+            fetchPatients();
+            setSelectedPatient(prev => ({
+                ...prev,
+                hasActiveAlert: false,
+                activeAlertId: null,
+                moodChecks: prev.moodChecks.map(check =>
+                    check.id === prev.activeAlertId ? { ...check, isDismissed: true } : check
+                )
+            }));
+            toast.current?.show({ severity: 'success', summary: 'Alerta Atendida', detail: 'La alerta ha sido desactivada correctamente' });
+        } catch (error) {
+            console.error('Error dismissing alert:', error);
+            toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo desactivar la alerta' });
         } finally {
             setSubmitting(false);
         }

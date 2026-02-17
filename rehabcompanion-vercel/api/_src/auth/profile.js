@@ -25,19 +25,31 @@ export default async function handler(req, res) {
 
     const user = auth.user;
 
-    // Get garden state if user is a patient
+    // Get garden state and doctor if user is a patient
     let garden = null;
+    let doctor = null;
     if (user.role === 'PATIENT') {
       garden = await prisma.gardenState.findUnique({
         where: { userId: user.id }
       });
+
+      const doctorRelation = await prisma.doctorPatient.findFirst({
+        where: { patientId: user.id, isActive: true },
+        include: {
+          doctor: {
+            select: { id: true, firstName: true, lastName: true, email: true }
+          }
+        }
+      });
+      doctor = doctorRelation?.doctor || null;
     }
 
     const { password: _, encryptionKey: __, ...userPublic } = user;
 
     res.status(200).json({
       user: userPublic,
-      garden
+      garden,
+      doctor
     });
   } catch (error) {
     console.error('Get profile error:', error);

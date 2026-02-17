@@ -23,6 +23,19 @@ api.interceptors.request.use(
   }
 );
 
+// If token is expired or invalid, clear session and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth API
 export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
@@ -50,7 +63,6 @@ export const doctorAPI = {
   getPatientDetail: (id) => api.get(`/doctor/patients/${id}`),
   assignTask: (patientId, taskData) => api.post(`/doctor/patients/${patientId}/tasks`, taskData),
   sendMessage: (patientId, message) => api.post(`/doctor/patients/${patientId}/message`, { content: message }),
-  createPatient: (patientData) => api.post('/doctor/patients', patientData),
   createPatient: (patientData) => api.post('/doctor/patients', patientData),
   generateMessage: (data) => api.post('/doctor/generate-message', data),
   dismissAlert: (moodCheckId) => api.post('/doctor/dismiss-alert', { moodCheckId })
