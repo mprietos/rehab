@@ -154,6 +154,7 @@ model MoodCheck {
   moodLevel                MoodLevel @map("mood_level")
   notes                    String?   @db.Text
   requestedEmergencyCall   Boolean   @default(false) @map("requested_emergency_call")
+  isDismissed              Boolean   @default(false) @map("is_dismissed")
   emergencyCallNotified    Boolean   @default(false) @map("emergency_call_notified")
   doctorNotified           Boolean   @default(false) @map("doctor_notified")
   createdAt                DateTime  @default(now()) @map("created_at")

@@ -55,13 +55,80 @@ export default async function handler(req, res) {
                                 streakDays: true,
                                 lastActionDate: true
                             }
+                        },
+                        moodChecks: {
+                            where: {
+                                OR: [
+                                    { requestedEmergencyCall: true },
+                                    { moodLevel: 'GOOD' }
+                                ]
+                            },
+                            orderBy: {
+                                date: 'desc'
+                            },
+                            take: 20, // Get enough history to determine status
+                            select: {
+                                id: true,
+                                date: true,
+                                moodLevel: true,
+                                requestedEmergencyCall: true,
+                                isDismissed: true
+                            }
                         }
                     }
                 }
             }
         });
 
-        const patients = connections.map(c => c.patient);
+        const patients = connections.map(c => {
+            const patient = c.patient;
+
+            // Calculate active alert status
+            let hasActiveAlert = false;
+            let activeAlertId = null;
+
+            if (patient.moodChecks && patient.moodChecks.length > 0) {
+                // Find the most recent emergency call request
+                const latestAlert = patient.moodChecks.find(check => check.requestedEmergencyCall);
+
+                if (latestAlert && !latestAlert.isDismissed) {
+                    // Check if patient has recovered since the alert
+                    // Recovery = 2 consecutive GOOD days AFTER the alert date
+                    const checksAfterAlert = patient.moodChecks.filter(check =>
+                        new Date(check.date) > new Date(latestAlert.date)
+                    );
+
+                    let consecutiveGoodDays = 0;
+                    let hasRecovered = false;
+
+                    // Sort ascending to check consecutive days properly
+                    checksAfterAlert.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    for (const check of checksAfterAlert) {
+                        if (check.moodLevel === 'GOOD') {
+                            consecutiveGoodDays++;
+                            if (consecutiveGoodDays >= 2) {
+                                hasRecovered = true;
+                                break;
+                            }
+                        } else {
+                            consecutiveGoodDays = 0;
+                        }
+                    }
+
+                    if (!hasRecovered) {
+                        hasActiveAlert = true;
+                        activeAlertId = latestAlert.id;
+                    }
+                }
+            }
+
+            return {
+                ...patient,
+                hasActiveAlert,
+                activeAlertId
+            };
+        });
 
         res.status(200).json({ patients });
     } catch (error) {

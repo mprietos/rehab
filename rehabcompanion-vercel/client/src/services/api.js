@@ -51,7 +51,9 @@ export const doctorAPI = {
   assignTask: (patientId, taskData) => api.post(`/doctor/patients/${patientId}/tasks`, taskData),
   sendMessage: (patientId, message) => api.post(`/doctor/patients/${patientId}/message`, { content: message }),
   createPatient: (patientData) => api.post('/doctor/patients', patientData),
-  generateMessage: (data) => api.post('/doctor/generate-message', data)
+  createPatient: (patientData) => api.post('/doctor/patients', patientData),
+  generateMessage: (data) => api.post('/doctor/generate-message', data),
+  dismissAlert: (moodCheckId) => api.post('/doctor/dismiss-alert', { moodCheckId })
 };
 
 // Messages API

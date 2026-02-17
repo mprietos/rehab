@@ -10,7 +10,7 @@ import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
-import { doctorAPI } from '../services/api';
+import { doctorAPI, messageAPI } from '../services/api';
 import MoodChart from './MoodChart';
 
 const DoctorDashboard = () => {
@@ -23,6 +23,7 @@ const DoctorDashboard = () => {
     const [taskDialog, setTaskDialog] = useState(false);
     const [messageDialog, setMessageDialog] = useState(false);
     const [createPatientDialog, setCreatePatientDialog] = useState(false);
+    const [conversationMessages, setConversationMessages] = useState([]);
 
     // Assignment form states
     const [newTask, setNewTask] = useState({ description: '', type: 'ACTIVITY' });
@@ -88,8 +89,12 @@ const DoctorDashboard = () => {
 
     const openPatientDetail = async (patient) => {
         try {
-            const response = await doctorAPI.getPatientDetail(patient.id);
-            setSelectedPatient(response.data.patient);
+            const [patientResponse, messagesResponse] = await Promise.all([
+                doctorAPI.getPatientDetail(patient.id),
+                messageAPI.getConversation(patient.id)
+            ]);
+            setSelectedPatient(patientResponse.data.patient);
+            setConversationMessages(messagesResponse.data.messages || []);
             setShowDetailDialog(true);
         } catch (error) {
             console.error('Error fetching patient details:', error);
@@ -121,6 +126,39 @@ const DoctorDashboard = () => {
             toast.current?.show({ severity: 'success', summary: 'Éxito', detail: 'Mensaje enviado correctamente' });
             setMessageDialog(false);
             setNewMessage('');
+            // Refresh conversation messages
+            const messagesResponse = await messageAPI.getConversation(selectedPatient.id);
+
+
+            const handleDismissAlert = async () => {
+                if (!selectedPatient?.activeAlertId) return;
+
+                try {
+                    setSubmitting(true);
+                    await doctorAPI.dismissAlert(selectedPatient.activeAlertId);
+
+                    // Refresh patient list to update UI
+                    fetchPatients();
+
+                    // Update local state to hide alert immediately
+                    setSelectedPatient(prev => ({
+                        ...prev,
+                        hasActiveAlert: false,
+                        activeAlertId: null,
+                        moodChecks: prev.moodChecks.map(check =>
+                            check.id === prev.activeAlertId ? { ...check, isDismissed: true } : check
+                        )
+                    }));
+
+                    toast.current?.show({ severity: 'success', summary: 'Alerta Atendida', detail: 'La alerta ha sido desactivada correctamente' });
+                } catch (error) {
+                    console.error('Error dismissing alert:', error);
+                    toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo desactivar la alerta' });
+                } finally {
+                    setSubmitting(false);
+                }
+            };
+            setConversationMessages(messagesResponse.data || []);
         } catch (error) {
             console.error('Error sending message:', error);
             toast.current?.show({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar el mensaje' });
@@ -261,7 +299,21 @@ const DoctorDashboard = () => {
 
                 <Card className="shadow-md">
                     <DataTable value={patients} loading={loading} paginator rows={10} emptyMessage="No hay pacientes asignados">
-                        <Column field="firstName" header="Nombre" sortable></Column>
+                        <Column
+                            field="firstName"
+                            header="Nombre"
+                            sortable
+                            body={(rowData) => (
+                                <div className="flex items-center gap-2">
+                                    {rowData.firstName}
+                                    {rowData.hasActiveAlert && (
+                                        <span title="Alerta de Emergencia Activa" className="animate-pulse bg-red-100 text-red-600 rounded-full p-1 text-xs">
+                                            🚨
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                        />
                         <Column field="lastName" header="Apellido" sortable></Column>
                         <Column field="email" header="Email" sortable></Column>
                         <Column header="Estado Planta" body={stageBodyTemplate}></Column>
@@ -271,91 +323,17 @@ const DoctorDashboard = () => {
 
                 <Dialog visible={showDetailDialog} onHide={() => setShowDetailDialog(false)} header="Detalle de Paciente" style={{ width: '70vw' }} modal>
                     {selectedPatient && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">Información Personal</h3>
-                                <p><strong>Nombre:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
-                                <p><strong>Email:</strong> {selectedPatient.email}</p>
-                                <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
-                                    <h4 className="font-bold text-red-700">Contacto de Emergencia</h4>
-                                    <p>{selectedPatient.emergencyContactName}</p>
-                                    <p>{selectedPatient.emergencyContactPhone}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2">Progreso</h3>
-                                <div className="p-4 bg-green-50 rounded border border-green-200">
-                                    <p><strong>Etapa:</strong> {selectedPatient.gardenState?.plantStage}</p>
-                                    <p><strong>XP Actual:</strong> {selectedPatient.gardenState?.currentXp}</p>
-                                    <p><strong>Racha:</strong> {selectedPatient.gardenState?.streakDays} días</p>
-                                </div>
-                                <div className="mt-4 flex gap-2">
-                                    <Button label="Asignar Tarea" icon="pi pi-check-square" onClick={() => setTaskDialog(true)} />
-                                    <Button label="Enviar Ánimo" icon="pi pi-heart" severity="help" onClick={() => setMessageDialog(true)} />
-                                </div>
-                            </div>
-
-                            <div className="col-span-1 md:col-span-2 mt-4">
-                                <h3 className="text-lg font-semibold mb-2">Historial Reciente</h3>
-                                <DataTable value={selectedPatient.dailyTasks} paginator rows={5} size="small">
-                                    <Column field="date" header="Fecha" body={(rowData) => new Date(rowData.date).toLocaleDateString()}></Column>
-                                    <Column field="type" header="Tipo"></Column>
-                                    <Column field="description" header="Descripción"></Column>
-                                    <Column field="isCompleted" header="Completado" body={(rowData) => rowData.isCompleted ? <i className="pi pi-check text-green-500"></i> : <i className="pi pi-times text-red-500"></i>}></Column>
-                                    <Column field="mood" header="Estado de Ánimo"></Column>
-                                </DataTable>
-                            </div>
-
-                            <div className="col-span-1 md:col-span-2 mt-4">
-                                <h3 className="text-lg font-semibold mb-2">Historial de Estados de Ánimo</h3>
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    {selectedPatient.dailyTasks
-                                        ?.filter(task => task.mood && task.isCompleted)
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                        .slice(0, 10)
-                                        .map((task, index) => (
-                                            <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                                                <span className="text-sm text-gray-600">
-                                                    {new Date(task.date).toLocaleDateString('es-ES', {
-                                                        weekday: 'short',
-                                                        day: 'numeric',
-                                                        month: 'short'
-                                                    })}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${task.mood === 'Bien' ? 'bg-green-100 text-green-700' :
-                                                        task.mood === 'Regular' ? 'bg-yellow-100 text-yellow-700' :
-                                                            task.mood === 'Mal' ? 'bg-red-100 text-red-700' :
-                                                                'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                        {task.mood || 'No registrado'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    {!selectedPatient.dailyTasks?.some(task => task.mood) && (
-                                        <p className="text-center text-gray-500 py-4">
-                                            No hay registros de estado de ánimo
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="col-span-1 md:col-span-2 mt-4">
-                                <h3 className="text-lg font-semibold mb-2">Gráfico de Estado de Ánimo (15 días)</h3>
-                                <MoodChart moodChecks={selectedPatient.moodChecks || []} />
-                            </div>
-
-                            {/* Emergency Call Alert */}
-                            {selectedPatient.moodChecks?.some(check => check.requestedEmergencyCall) && (
-                                <div className="col-span-1 md:col-span-2 mt-4">
-                                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                        <div className="flex flex-col gap-6">
+                            {/* Emergency Call Alert - AT THE TOP */}
+                            {selectedPatient.hasActiveAlert && (
+                                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4">
+                                    <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <span className="text-3xl">🚨</span>
                                             <div>
-                                                <h4 className="font-bold text-red-700 text-lg">Alerta de Emergencia</h4>
-                                                <p className="text-red-600">
-                                                    El paciente ha solicitado contacto de emergencia debido a estado de ánimo bajo prolongado.
+                                                <h4 className="font-bold text-red-700 text-lg">Alerta de Emergencia Activa</h4>
+                                                <p className="text-red-600 font-medium">
+                                                    El paciente ha solicitado contacto de emergencia.
                                                 </p>
                                                 {selectedPatient.emergencyContactName && (
                                                     <p className="text-sm text-gray-700 mt-2">
@@ -364,9 +342,154 @@ const DoctorDashboard = () => {
                                                 )}
                                             </div>
                                         </div>
+                                        <Button
+                                            label="Marcar como Atendido"
+                                            icon="pi pi-check"
+                                            severity="danger"
+                                            onClick={handleDismissAlert}
+                                            loading={submitting}
+                                        />
                                     </div>
                                 </div>
                             )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Información Personal</h3>
+                                    <p><strong>Nombre:</strong> {selectedPatient.firstName} {selectedPatient.lastName}</p>
+                                    <p><strong>Email:</strong> {selectedPatient.email}</p>
+                                    <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
+                                        <h4 className="font-bold text-red-700">Contacto de Emergencia</h4>
+                                        <p>{selectedPatient.emergencyContactName}</p>
+                                        <p>{selectedPatient.emergencyContactPhone}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Progreso</h3>
+                                    <div className="p-4 bg-green-50 rounded border border-green-200">
+                                        <p><strong>Etapa:</strong> {selectedPatient.gardenState?.plantStage}</p>
+                                        <p><strong>XP Actual:</strong> {selectedPatient.gardenState?.currentXp}</p>
+                                        <p><strong>Racha:</strong> {selectedPatient.gardenState?.streakDays} días</p>
+                                    </div>
+                                    <div className="mt-4 flex flex-col gap-3">
+                                        <Button
+                                            label="Asignar Tarea"
+                                            icon="pi pi-check-square"
+                                            onClick={() => setTaskDialog(true)}
+                                            className="w-full"
+                                            size="large"
+                                            severity="primary"
+                                            style={{ padding: '0.75rem 1rem', fontSize: '1rem', fontWeight: '600' }}
+                                        />
+                                        <Button
+                                            label="Enviar Mensaje de Ánimo"
+                                            icon="pi pi-heart"
+                                            severity="help"
+                                            onClick={() => setMessageDialog(true)}
+                                            className="w-full"
+                                            size="large"
+                                            style={{ padding: '0.75rem 1rem', fontSize: '1rem', fontWeight: '600' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1 md:col-span-2 mt-4">
+                                    <h3 className="text-lg font-semibold mb-2">Historial Reciente</h3>
+                                    <DataTable value={selectedPatient.dailyTasks} paginator rows={5} size="small">
+                                        <Column field="date" header="Fecha" body={(rowData) => new Date(rowData.date).toLocaleDateString()}></Column>
+                                        <Column field="type" header="Tipo"></Column>
+                                        <Column field="description" header="Descripción"></Column>
+                                        <Column field="isCompleted" header="Completado" body={(rowData) => rowData.isCompleted ? <i className="pi pi-check text-green-500"></i> : <i className="pi pi-times text-red-500"></i>}></Column>
+                                        <Column field="mood" header="Estado de Ánimo"></Column>
+                                    </DataTable>
+                                </div>
+
+                                <div className="col-span-1 md:col-span-2 mt-4">
+                                    <h3 className="text-lg font-semibold mb-2">Historial de Estados de Ánimo</h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg max-h-80 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                                        {selectedPatient.dailyTasks
+                                            ?.filter(task => task.mood && task.isCompleted)
+                                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                            .slice(0, 15)
+                                            .map((task, index) => (
+                                                <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                                                    <span className="text-sm text-gray-600">
+                                                        {new Date(task.date).toLocaleDateString('es-ES', {
+                                                            weekday: 'short',
+                                                            day: 'numeric',
+                                                            month: 'short'
+                                                        })}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${task.mood === 'Bien' ? 'bg-green-100 text-green-700' :
+                                                            task.mood === 'Regular' ? 'bg-yellow-100 text-yellow-700' :
+                                                                task.mood === 'Mal' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-gray-100 text-gray-700'
+                                                            }`}>
+                                                            {task.mood || 'No registrado'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        {!selectedPatient.dailyTasks?.some(task => task.mood) && (
+                                            <p className="text-center text-gray-500 py-4">
+                                                No hay registros de estado de ánimo
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="col-span-1 md:col-span-2 mt-4">
+                                    <h3 className="text-lg font-semibold mb-2">Gráfico de Estado de Ánimo (15 días)</h3>
+                                    <MoodChart moodChecks={selectedPatient.moodChecks || []} />
+                                </div>
+
+                                {/* Message History Section */}
+                                <div className="col-span-1 md:col-span-2 mt-4">
+                                    <h3 className="text-lg font-semibold mb-2">Historial de Mensajes</h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                                        {conversationMessages.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {conversationMessages.map((message, index) => {
+                                                    const isFromDoctor = message.sender.role === 'DOCTOR';
+                                                    return (
+                                                        <div
+                                                            key={message.id || index}
+                                                            className={`flex ${isFromDoctor ? 'justify-end' : 'justify-start'}`}
+                                                        >
+                                                            <div
+                                                                className={`max-w-[70%] rounded-lg p-3 ${isFromDoctor
+                                                                    ? 'bg-blue-100 border border-blue-200'
+                                                                    : 'bg-white border border-gray-200'
+                                                                    }`}
+                                                            >
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="text-xs font-semibold text-gray-700">
+                                                                        {isFromDoctor ? '👨‍⚕️ Tú' : `👤 ${message.sender.firstName}`}
+                                                                    </span>
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {new Date(message.createdAt).toLocaleDateString('es-ES', {
+                                                                            day: 'numeric',
+                                                                            month: 'short',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-800">{message.content}</p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <p className="text-center text-gray-500 py-4">
+                                                No hay mensajes en el historial
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </Dialog>
