@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/db.js';
 import { verifyToken } from '../utils/auth.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     const decoded = verifyToken(token);
-    const doctorId = decoded.userId;
+    const doctorId = decoded.id;
 
     // Verify the user is a doctor
     const doctor = await prisma.user.findUnique({
